@@ -1,15 +1,22 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.Random;
 
-public class Board extends JPanel {
+public class Board extends JPanel implements MouseListener {
     public int HORIZONTAL_SIZE = 8;
     public int VERTICAL_SIZE = 8;
     public int NUMBER_OF_MINES = 10;
     public int [][]board;
+    boolean [][] clickedSquares;
+    int SQUARE_SIZE = 60;
+    boolean gameOver;
 
     Board(){
         board = new int[HORIZONTAL_SIZE][VERTICAL_SIZE];
+        clickedSquares = new boolean[HORIZONTAL_SIZE][VERTICAL_SIZE];
+        gameOver = false;
 
         Random rand = new Random();
         for (int i = 0; i < NUMBER_OF_MINES; i++) {
@@ -22,6 +29,7 @@ public class Board extends JPanel {
 
         for (int i = 0; i < VERTICAL_SIZE; i++) {
             for (int j = 0; j < HORIZONTAL_SIZE; j++) {
+                clickedSquares[i][j] = false;
                 if(board[i][j] == -1) continue;
                 int numberOfNeighboringMines = 0;
 
@@ -48,6 +56,8 @@ public class Board extends JPanel {
                 board[i][j] = numberOfNeighboringMines;
             }
         }
+
+        addMouseListener(this);
     }
 
     @Override
@@ -62,14 +72,21 @@ public class Board extends JPanel {
         g.setColor(Color.DARK_GRAY);
         for (int i = 0; i < HORIZONTAL_SIZE; i++) {
             for (int j = 0; j < VERTICAL_SIZE; j++) {
+
+
                 int x =j* SQUARE_SIZE +j+2;
                 int y = i* SQUARE_SIZE +i+2;
                 g.setColor(Color.DARK_GRAY);
                 g.fillRect(j* SQUARE_SIZE +j+2, i* SQUARE_SIZE +i+2, SQUARE_SIZE -1, SQUARE_SIZE -1);
 
-                if (board[i][j] == -1) {
+                if(!clickedSquares [i][j]){
+                    g.setColor(Color.GRAY);
+                    g.fillRect(j* SQUARE_SIZE +j+2, i* SQUARE_SIZE +i+2, SQUARE_SIZE -1, SQUARE_SIZE -1);
+                } else if (board[i][j] == -1) {
+                    g.setColor(Color.red);
+                    g.fillRect(j* SQUARE_SIZE +j+2, i* SQUARE_SIZE +i+2, SQUARE_SIZE -1, SQUARE_SIZE -1);
                     g.setColor(Color.WHITE);
-                    g.drawString("*", x + SQUARE_SIZE /4,y - SQUARE_SIZE /8);
+                    g.drawString("*", x + SQUARE_SIZE /4,y + SQUARE_SIZE);
                 } else if (board[i][j] > 0) {
                     switch (board[i][j]) {
                         case 1:
@@ -98,7 +115,7 @@ public class Board extends JPanel {
                             break;
 
                     }
-                    g.drawString(String.valueOf(board[i][j]), x + SQUARE_SIZE /4,y - SQUARE_SIZE /4);
+                    g.drawString(String.valueOf(board[i][j]), x + SQUARE_SIZE /4,y + SQUARE_SIZE*3/4);
                 }
             }
         }
@@ -106,9 +123,68 @@ public class Board extends JPanel {
 
     @Override
     public Dimension getPreferredSize() {
-        int SQUARE_SIZE = 60;
         return new Dimension(HORIZONTAL_SIZE * SQUARE_SIZE +HORIZONTAL_SIZE, VERTICAL_SIZE * SQUARE_SIZE +VERTICAL_SIZE);
     }
+
+    void clickEmptySquares(int x, int y){
+        if(x<0 || y<0 || x>=HORIZONTAL_SIZE || y >=VERTICAL_SIZE) return;
+        if(clickedSquares[y][x]) return;
+
+        clickedSquares[y][x] = true;
+        if(board[y][x]!=0) return;
+
+        clickEmptySquares(x-1,y-1);
+        clickEmptySquares(x,y-1);
+        clickEmptySquares(x+1,y-1);
+        clickEmptySquares(x-1,y);
+        clickEmptySquares(x+1,y);
+        clickEmptySquares(x-1,y+1);
+        clickEmptySquares(x,y+1);
+        clickEmptySquares(x+1,y+1);
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if(gameOver) return;
+
+        int x = e.getX()/SQUARE_SIZE;
+        int y = e.getY()/SQUARE_SIZE;
+
+        if(board[y][x]==-1){
+            clickedSquares[y][x] = true;
+            repaint();
+            if (e.getButton() == MouseEvent.BUTTON1) {
+                //lewy
+                gameOver = true;
+            }
+        }
+
+        if(!clickedSquares[y][x]){
+            clickEmptySquares(x,y);
+            repaint();
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+
 
     public static void main(String[] args) {
         JFrame frame = new JFrame();
@@ -119,7 +195,6 @@ public class Board extends JPanel {
         frame.getContentPane().add(board);
         frame.pack();
         frame.setVisible(true);
-
-
     }
+
 }
